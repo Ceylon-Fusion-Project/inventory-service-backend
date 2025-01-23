@@ -20,8 +20,6 @@ public class Inventory {
     @Min(0)
     @Column(name = "quantity_in_stock",nullable = false)
     private Integer quantityInStock;
-    @Column(name = "reserved_stock",nullable = false)
-    private Integer reservedStock;
 
     public Long getInventoryId() {
         return inventoryId;
@@ -45,13 +43,5 @@ public class Inventory {
 
     public void setQuantityInStock(@Min(0) Integer quantityInStock) {
         this.quantityInStock = quantityInStock;
-    }
-
-    public Integer getReservedStock() {
-        return reservedStock;
-    }
-
-    public void setReservedStock(Integer reservedStock) {
-        this.reservedStock = reservedStock;
     }
 }

@@ -4,17 +4,20 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class InventoryResponseDTO {
+    private Long inventoryId;
     private Long productId;
     private Integer quantityInStock;
-    private Integer reservedStock;
 
-    public InventoryResponseDTO(Long productId, Integer quantityInStock, Integer reservedStock) {
-        this.productId = productId;
-        this.quantityInStock = quantityInStock;
-        this.reservedStock = reservedStock;
+    public Long getInventoryId() {
+        return inventoryId;
+    }
+
+    public void setInventoryId(Long inventoryId) {
+        this.inventoryId = inventoryId;
     }
 
     public Long getProductId() {
@@ -31,13 +34,5 @@ public class InventoryResponseDTO {
 
     public void setQuantityInStock(Integer quantityInStock) {
         this.quantityInStock = quantityInStock;
-    }
-
-    public Integer getReservedStock() {
-        return reservedStock;
-    }
-
-    public void setReservedStock(Integer reservedStock) {
-        this.reservedStock = reservedStock;
     }
 }

@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class InventoryRequestDTO {
     private Long productId;
-
     @Min(0)
-    private Integer quantity;
+    private Integer quantityInStock;
 
     public Long getProductId() {
         return productId;
@@ -22,11 +21,11 @@ public class InventoryRequestDTO {
         this.productId = productId;
     }
 
-    public @Min(0) Integer getQuantity() {
-        return quantity;
+    public @Min(0) Integer getQuantityInStock() {
+        return quantityInStock;
     }
 
-    public void setQuantity(@Min(0) Integer quantity) {
-        this.quantity = quantity;
+    public void setQuantityInStock(@Min(0) Integer quantityInStock) {
+        this.quantityInStock = quantityInStock;
     }
 }

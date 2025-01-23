@@ -3,6 +3,7 @@ package com.finalProject.inventry_service.controller;
 import com.finalProject.inventry_service.dto.InventoryRequestDTO;
 import com.finalProject.inventry_service.dto.InventoryResponseDTO;
 import com.finalProject.inventry_service.service.InventoryService;
+import com.finalProject.inventry_service.util.StandardResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,43 +11,44 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/inventory")
+@RequestMapping("/api/v1/inventory")
 public class InventoryController {
 
     @Autowired
     private InventoryService inventoryService;
 
     // Get product inventory by productId
-    @GetMapping("/products/{productId}")
-    public ResponseEntity<InventoryResponseDTO> getInventory(@PathVariable Long productId) {
-        InventoryResponseDTO responseDto = inventoryService.getInventory(productId);
-        if (responseDto != null) {
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    @GetMapping(
+            path = "/product-quantity-by-product-id",
+            params = "productId")
+    public ResponseEntity<StandardResponse> getInventory(@RequestParam(value = "productId") Long productId) {
+        try {
+            InventoryResponseDTO responseDto = inventoryService.getInventory(productId);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.OK.value(), "Inventory fetched successfully", responseDto);
+            return ResponseEntity.ok(standardResponse);
+        } catch (IllegalArgumentException e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
+            return ResponseEntity.badRequest().body(standardResponse);
+        } catch (Exception e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     // Add stock to inventory
     @PostMapping("/products/add-stock")
-    public ResponseEntity<InventoryResponseDTO> addStock(@Valid @RequestBody InventoryRequestDTO requestDto) {
-        InventoryResponseDTO responseDto = inventoryService.addStock(requestDto);
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
-
-    // Reserve stock
-    @PostMapping("/products/reserve")
-    public ResponseEntity<String> reserveStock(@Valid @RequestBody InventoryRequestDTO requestDto) {
-        boolean success = inventoryService.reserveStock(requestDto);
-        if (success) {
-            return new ResponseEntity<>("Stock reserved successfully", HttpStatus.OK);
+    public ResponseEntity<StandardResponse> addStock(@Valid @RequestBody InventoryRequestDTO requestDto) {
+        try {
+            InventoryResponseDTO responseDto = inventoryService.addStock(requestDto);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.CREATED.value(), "Inventory added successfully", responseDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(standardResponse);
+        } catch (IllegalArgumentException ex) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
+            return ResponseEntity.badRequest().body(standardResponse);
+        } catch (Exception e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
         }
-        return new ResponseEntity<>("Insufficient stock", HttpStatus.BAD_REQUEST);
     }
 
-    // Release reserved stock
-    @PostMapping("/products/release")
-    public ResponseEntity<String> releaseStock(@Valid @RequestBody InventoryRequestDTO requestDto) {
-        inventoryService.releaseStock(requestDto);
-        return new ResponseEntity<>("Stock released successfully", HttpStatus.OK);
-    }
 }
