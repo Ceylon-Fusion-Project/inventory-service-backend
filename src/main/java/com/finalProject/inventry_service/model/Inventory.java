@@ -6,10 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Table(name = "inventory")
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +23,8 @@ public class Inventory {
     @Min(0)
     @Column(name = "quantity_in_stock",nullable = false)
     private Integer quantityInStock;
+    @OneToOne(mappedBy = "inventory",cascade = CascadeType.ALL,orphanRemoval = true)
+    private ReleaseInventory releaseInventory;
 
     public Long getInventoryId() {
         return inventoryId;
