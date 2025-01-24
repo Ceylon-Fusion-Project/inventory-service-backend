@@ -1,7 +1,6 @@
 package com.finalProject.inventry_service.controller;
 
-import com.finalProject.inventry_service.dto.InventoryRequestDTO;
-import com.finalProject.inventry_service.dto.InventoryResponseDTO;
+import com.finalProject.inventry_service.dto.*;
 import com.finalProject.inventry_service.service.InventoryService;
 import com.finalProject.inventry_service.util.StandardResponse;
 import jakarta.validation.Valid;
@@ -31,11 +30,11 @@ public class InventoryController {
             InventoryResponseDTO responseDto = inventoryService.getInventory(productId);
             StandardResponse standardResponse = new StandardResponse(HttpStatus.OK.value(), "Inventory fetched successfully", responseDto);
             return ResponseEntity.ok(standardResponse);
-        } catch (IllegalArgumentException e) {
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
+        } catch (IllegalArgumentException ex) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
             return ResponseEntity.badRequest().body(standardResponse);
         } catch (Exception e) {
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred", null);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
         }
     }
@@ -52,10 +51,26 @@ public class InventoryController {
             StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
             return ResponseEntity.badRequest().body(standardResponse);
         } catch (Exception e) {
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred", null);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
         }
     }
+
+    @PostMapping(path = "products/release-stock")
+    public ResponseEntity<StandardResponse> releaseStock(@Valid @RequestBody InventoryReleaseRequestDTO requestDTO) {
+        try {
+            InventoryReleaseResponseDTO responseDTO = inventoryService.releaseStock(requestDTO);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.CREATED.value(), "Inventory released successfully", responseDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(standardResponse);
+        } catch (IllegalArgumentException ex) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
+            return ResponseEntity.badRequest().body(standardResponse);
+        } catch (Exception e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
+        }
+    }
+
     @GetMapping(
             path = "get-all-products-quantity",
             params = {"page", "size"}
@@ -74,8 +89,29 @@ public class InventoryController {
             return ResponseEntity.badRequest().body(standardResponse);
         }
         catch (Exception e){
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occured", null);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
         }
     }
+
+    @GetMapping("check-inventory-availability")
+    public ResponseEntity<StandardResponse> checkInventoryAvailability(@RequestBody CheckInventoryDTO checkInventoryDTO) {
+        try {
+            // Validate DTO
+            if (checkInventoryDTO.getProductId() == null || checkInventoryDTO.getRequestedQuantity() <= 0) {
+                throw new IllegalArgumentException("Invalid productId or requestedQuantity");
+            }
+
+            String response = inventoryService.checkInventoryAvailability(checkInventoryDTO);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.OK.value(), "Checked successfully", response);
+            return ResponseEntity.ok(standardResponse);
+        } catch (IllegalArgumentException e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
+            return ResponseEntity.badRequest().body(standardResponse);
+        } catch (Exception e) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standardResponse);
+        }
+    }
+
 }

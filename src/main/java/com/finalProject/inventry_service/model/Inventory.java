@@ -23,8 +23,8 @@ public class Inventory {
     @Min(0)
     @Column(name = "quantity_in_stock",nullable = false)
     private Integer quantityInStock;
-    @OneToOne(mappedBy = "inventory",cascade = CascadeType.ALL,orphanRemoval = true)
-    private ReleaseInventory releaseInventory;
+    @OneToMany(mappedBy = "inventory",cascade = CascadeType.ALL)
+    private List<ReleaseInventory> releaseInventory;
 
     public Long getInventoryId() {
         return inventoryId;

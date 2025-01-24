@@ -1,7 +1,6 @@
 package com.finalProject.inventry_service.service;
 
-import com.finalProject.inventry_service.dto.InventoryRequestDTO;
-import com.finalProject.inventry_service.dto.InventoryResponseDTO;
+import com.finalProject.inventry_service.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,4 +10,6 @@ public interface InventoryService {
     InventoryResponseDTO getInventory(Long productId);
     InventoryResponseDTO addStock(InventoryRequestDTO inventoryrequestDTO);
     List<InventoryResponseDTO> getAllInventory(Pageable pageable);
+    String checkInventoryAvailability(CheckInventoryDTO checkInventoryDTO);
+    InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO);
 }
