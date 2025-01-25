@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class InventoryRequestDTO {
+    private Long orderId;
     private Long productId;
     @Min(0)
     private Integer quantityInStock;

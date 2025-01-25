@@ -5,7 +5,6 @@ import com.finalProject.inventry_service.service.InventoryService;
 import com.finalProject.inventry_service.util.StandardResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -94,19 +93,14 @@ public class InventoryController {
         }
     }
 
-    @GetMapping("check-inventory-availability")
-    public ResponseEntity<StandardResponse> checkInventoryAvailability(@RequestBody CheckInventoryDTO checkInventoryDTO) {
+    @PostMapping("/check-availability")
+    public ResponseEntity<StandardResponse> checkInventoryAvailability(@Valid @RequestBody InventoryAvailabilityRequestDTO requestDTO) {
         try {
-            // Validate DTO
-            if (checkInventoryDTO.getProductId() == null || checkInventoryDTO.getRequestedQuantity() <= 0) {
-                throw new IllegalArgumentException("Invalid productId or requestedQuantity");
-            }
-
-            String response = inventoryService.checkInventoryAvailability(checkInventoryDTO);
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.OK.value(), "Checked successfully", response);
+            InventoryAvailabilityResponseDTO responseDTO = inventoryService.checkInventoryAvailability(requestDTO);
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.OK.value(), "Checked successfully", responseDTO);
             return ResponseEntity.ok(standardResponse);
-        } catch (IllegalArgumentException e) {
-            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
+        } catch (IllegalArgumentException ex) {
+            StandardResponse standardResponse = new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
             return ResponseEntity.badRequest().body(standardResponse);
         } catch (Exception e) {
             StandardResponse standardResponse = new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);

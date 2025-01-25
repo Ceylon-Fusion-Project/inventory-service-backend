@@ -113,27 +113,17 @@ public class InventoryServiceImpl implements InventoryService {
                 .map(inventory -> modelMapper.map(inventory, InventoryResponseDTO.class))
                 .toList();
     }
-
     @Override
     @Transactional
-    public String checkInventoryAvailability(CheckInventoryDTO checkInventoryDTO) {
-        // Validate productId and requestedQuantity
-        if (checkInventoryDTO.getProductId() == null || checkInventoryDTO.getRequestedQuantity() <= 0) {
-            throw new IllegalArgumentException("Invalid productId or requestedQuantity");
-        }
+    public InventoryAvailabilityResponseDTO checkInventoryAvailability(InventoryAvailabilityRequestDTO requestDTO) {
+        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
 
-        // Fetch the inventory for the given productId
-        Inventory inventory = inventoryRepository.findByProductId(checkInventoryDTO.getProductId());
-        if (inventory == null || inventory.getQuantityInStock() == null) {
-            throw new IllegalArgumentException("Inventory not found");
+        if (inventory == null) {
+            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
         }
-
-        // Check if the requested quantity is available
-        if (inventory.getQuantityInStock() >= checkInventoryDTO.getRequestedQuantity()) {
-            return "Product is available. Requested quantity: " + checkInventoryDTO.getRequestedQuantity();
-        } else {
-            return "Insufficient stock. Available quantity: " + inventory.getQuantityInStock();
-        }
+        Boolean isAvailable = inventory.getQuantityInStock() >= requestDTO.getRequestedQuantity();
+        String message = isAvailable ? "Product is available." : "Insufficient stock.";
+        return new InventoryAvailabilityResponseDTO(isAvailable, inventory.getQuantityInStock(), message);
     }
 
 }
