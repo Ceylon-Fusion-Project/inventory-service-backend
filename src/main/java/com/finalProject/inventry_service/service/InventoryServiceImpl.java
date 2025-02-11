@@ -40,19 +40,19 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    public InventoryResponseDTO addStock(InventoryRequestDTO requestDto) {
-        Inventory inventory = inventoryRepository.findByProductId(requestDto.getProductId());
+    public InventoryResponseDTO addStock(Long productId, Integer quantityInStock) {
+        Inventory inventory = inventoryRepository.findByProductId(productId);
 
-        if (requestDto.getQuantityInStock() == null || requestDto.getQuantityInStock() < 0) {
+        if (quantityInStock == null || quantityInStock < 0) {
             throw new IllegalArgumentException("Invalid quantity");
         }
 
         if (inventory == null) {
             inventory = new Inventory();
-            inventory.setProductId(requestDto.getProductId());
-            inventory.setQuantityInStock(requestDto.getQuantityInStock());
+            inventory.setProductId(productId);
+            inventory.setQuantityInStock(quantityInStock);
         } else {
-            inventory.setQuantityInStock(inventory.getQuantityInStock() + requestDto.getQuantityInStock());
+            inventory.setQuantityInStock(inventory.getQuantityInStock() + quantityInStock);
         }
         inventory = inventoryRepository.save(inventory);
         // Use ModelMapper to map entity to DTO

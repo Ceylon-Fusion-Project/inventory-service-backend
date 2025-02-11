@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface InventoryService {
     InventoryResponseDTO getInventory(Long productId);
-    InventoryResponseDTO addStock(InventoryRequestDTO inventoryrequestDTO);
+    InventoryResponseDTO addStock(Long productId, Integer quantityInStock);
     List<InventoryResponseDTO> getAllInventory(Pageable pageable);
     InventoryAvailabilityResponseDTO checkInventoryAvailability(InventoryAvailabilityRequestDTO requestDTO);
     InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO);

@@ -55,7 +55,8 @@ public class InventoryController {
 
     @PostMapping(path = "/products/add-stock")
     public ResponseEntity<StandardResponse> addStock(
-            @Valid @RequestBody InventoryRequestDTO requestDto,
+            @RequestParam(value = "productId") Long productId,
+            @RequestParam(value = "quantityInStock") Integer quantityInStock,
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role) {
 
@@ -64,7 +65,7 @@ public class InventoryController {
         if (accessDenied != null) return accessDenied;
 
         try {
-            InventoryResponseDTO responseDto = inventoryService.addStock(requestDto);
+            InventoryResponseDTO responseDto = inventoryService.addStock(productId, quantityInStock);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new StandardResponse(HttpStatus.CREATED.value(), "Inventory added successfully", responseDto));
         } catch (IllegalArgumentException ex) {
