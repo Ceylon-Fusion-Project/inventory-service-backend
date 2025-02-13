@@ -25,6 +25,8 @@ public class Inventory {
     private Integer quantityInStock;
     @OneToMany(mappedBy = "inventory",cascade = CascadeType.ALL)
     private List<ReleaseInventory> releaseInventory;
+    @OneToMany(mappedBy = "inventory",cascade = CascadeType.ALL)
+    private List<InventoryStockHold> inventoryStockHold;
 
     public Long getInventoryId() {
         return inventoryId;
