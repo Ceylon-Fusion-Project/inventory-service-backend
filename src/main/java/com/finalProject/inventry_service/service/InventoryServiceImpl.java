@@ -3,9 +3,8 @@ package com.finalProject.inventry_service.service;
 import com.finalProject.inventry_service.dto.*;
 import com.finalProject.inventry_service.enums.OrderStatus;
 import com.finalProject.inventry_service.model.Inventory;
-import com.finalProject.inventry_service.model.ReleaseInventory;
+import com.finalProject.inventry_service.model.InventoryStockHold;
 import com.finalProject.inventry_service.repo.InventoryRepository;
-import com.finalProject.inventry_service.repo.ReleaseInventoryRepository;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +20,8 @@ public class InventoryServiceImpl implements InventoryService {
     @Autowired
     private InventoryRepository inventoryRepository;
 
-    @Autowired
-    private ReleaseInventoryRepository releaseInventoryRepository;
+//    @Autowired
+//    private ReleaseInventoryRepository releaseInventoryRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -59,46 +58,46 @@ public class InventoryServiceImpl implements InventoryService {
         return modelMapper.map(inventory, InventoryResponseDTO.class);
     }
 
-    @Transactional
-    @Override
-    public InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO) {
-        if (requestDTO.getOrderStatus() != OrderStatus.CONFIRMED) {
-            throw new IllegalStateException("Order status is not confirmed, cannot release stock.");
-        }
-
-        // Fetch inventory based on product ID
-        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
-
-        if (inventory == null) {
-            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
-        }
-
-        // Ensure enough stock is available
-        if (inventory.getQuantityInStock() < requestDTO.getOrderItemQuantity()) {
-            throw new IllegalStateException("Insufficient stock for product ID: " + requestDTO.getProductId());
-        }
-
-        // Reduce stock from inventory
-        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestDTO.getOrderItemQuantity());
-        inventoryRepository.save(inventory);
-
-        // Create and save ReleaseInventory record
-        ReleaseInventory releaseInventory = new ReleaseInventory();
-        releaseInventory.setProductId(requestDTO.getProductId());
-        releaseInventory.setQuantityReleased(requestDTO.getOrderItemQuantity());
-        releaseInventory.setInventory(inventory);
-
-        releaseInventory = releaseInventoryRepository.save(releaseInventory);
-
-        // Explicit ModelMapper mapping to avoid ambiguity
-        InventoryReleaseResponseDTO responseDTO = new InventoryReleaseResponseDTO();
-        responseDTO.setInventoryReleaseId(releaseInventory.getInventoryReleaseId());
-        responseDTO.setProductId(releaseInventory.getProductId());
-        responseDTO.setQuantityReleased(releaseInventory.getQuantityReleased());
-        responseDTO.setInventoryId(releaseInventory.getInventory().getInventoryId()); // Explicit mapping
-
-        return responseDTO;
-    }
+//    @Transactional
+//    @Override
+//    public InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO) {
+//        if (requestDTO.getOrderStatus() != OrderStatus.CONFIRMED) {
+//            throw new IllegalStateException("Order status is not confirmed, cannot release stock.");
+//        }
+//
+//        // Fetch inventory based on product ID
+//        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
+//
+//        if (inventory == null) {
+//            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
+//        }
+//
+//        // Ensure enough stock is available
+//        if (inventory.getQuantityInStock() < requestDTO.getOrderItemQuantity()) {
+//            throw new IllegalStateException("Insufficient stock for product ID: " + requestDTO.getProductId());
+//        }
+//
+//        // Reduce stock from inventory
+//        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestDTO.getOrderItemQuantity());
+//        inventoryRepository.save(inventory);
+//
+//        // Create and save ReleaseInventory record
+//        ReleaseInventory releaseInventory = new ReleaseInventory();
+//        releaseInventory.setProductId(requestDTO.getProductId());
+//        releaseInventory.setQuantityReleased(requestDTO.getOrderItemQuantity());
+//        releaseInventory.setInventory(inventory);
+//
+//        releaseInventory = releaseInventoryRepository.save(releaseInventory);
+//
+//        // Explicit ModelMapper mapping to avoid ambiguity
+//        InventoryReleaseResponseDTO responseDTO = new InventoryReleaseResponseDTO();
+//        responseDTO.setInventoryReleaseId(releaseInventory.getInventoryReleaseId());
+//        responseDTO.setProductId(releaseInventory.getProductId());
+//        responseDTO.setQuantityReleased(releaseInventory.getQuantityReleased());
+//        responseDTO.setInventoryId(releaseInventory.getInventory().getInventoryId()); // Explicit mapping
+//
+//        return responseDTO;
+//    }
 
 
     @Override
@@ -124,6 +123,23 @@ public class InventoryServiceImpl implements InventoryService {
         Boolean isAvailable = inventory.getQuantityInStock() >= requestDTO.getRequestedQuantity();
         String message = isAvailable ? "Product is available." : "Insufficient stock.";
         return new InventoryAvailabilityResponseDTO(isAvailable, inventory.getQuantityInStock(), message);
+    }
+
+    @Override
+    public InventoryStockHoldResponseDTO holdStock(InventoryStockHoldRequestDTO requestDTO) {
+        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
+
+        if (inventory == null) {
+            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
+        }
+        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestDTO.getOrderItemQuantity());
+        inventoryRepository.save(inventory);
+
+        // Create and save StockHold record
+        InventoryStockHold inventoryStockHold = new InventoryStockHold();
+        inventoryStockHold.setProductId(requestDTO.getProductId());
+
+        return modelMapper.map(inventoryStockHold, InventoryStockHoldResponseDTO.class);
     }
 
 }

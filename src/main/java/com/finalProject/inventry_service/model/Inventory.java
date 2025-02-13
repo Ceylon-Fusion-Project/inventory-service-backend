@@ -1,5 +1,6 @@
 package com.finalProject.inventry_service.model;
 
+import com.finalProject.inventry_service.enums.ProductStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
@@ -23,8 +24,9 @@ public class Inventory {
     @Min(0)
     @Column(name = "quantity_in_stock",nullable = false)
     private Integer quantityInStock;
-    @OneToMany(mappedBy = "inventory",cascade = CascadeType.ALL)
-    private List<ReleaseInventory> releaseInventory;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status",nullable = false)
+    private ProductStatus status;
     @OneToMany(mappedBy = "inventory",cascade = CascadeType.ALL)
     private List<InventoryStockHold> inventoryStockHold;
 
@@ -50,5 +52,19 @@ public class Inventory {
 
     public void setQuantityInStock(@Min(0) Integer quantityInStock) {
         this.quantityInStock = quantityInStock;
+    }
+
+    public ProductStatus getStatus() {
+        return status;
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void updateStatus() {
+       if(quantityInStock > 0){
+           this.status = ProductStatus.ACTIVE;
+       }else{
+           this.status = ProductStatus.INACTIVE;
+       }
     }
 }

@@ -10,5 +10,5 @@ public interface InventoryService {
     InventoryResponseDTO addStock(Long productId, Integer quantityInStock);
     List<InventoryResponseDTO> getAllInventory(Pageable pageable);
     InventoryAvailabilityResponseDTO checkInventoryAvailability(InventoryAvailabilityRequestDTO requestDTO);
-    InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO);
+    InventoryStockHoldResponseDTO holdStock(InventoryStockHoldRequestDTO requestDTO);
 }

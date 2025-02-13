@@ -77,28 +77,28 @@ public class InventoryController {
         }
     }
 
-    @PostMapping(path = "/products/release-stock")
-    public ResponseEntity<StandardResponse> releaseStock(
-            @Valid @RequestBody InventoryReleaseRequestDTO requestDTO,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Role") String role) {
-
-        logUserAccess(userId, role);
-        ResponseEntity<StandardResponse> accessDenied = checkAdminAccess(role);
-        if (accessDenied != null) return accessDenied;
-
-        try {
-            InventoryReleaseResponseDTO responseDTO = inventoryService.releaseStock(requestDTO);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new StandardResponse(HttpStatus.CREATED.value(), "Inventory released successfully", responseDTO));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest()
-                    .body(new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null));
-        }
-    }
+//    @PostMapping(path = "/products/release-stock")
+//    public ResponseEntity<StandardResponse> releaseStock(
+//            @Valid @RequestBody InventoryReleaseRequestDTO requestDTO,
+//            @RequestHeader("X-User-Id") String userId,
+//            @RequestHeader("X-User-Role") String role) {
+//
+//        logUserAccess(userId, role);
+//        ResponseEntity<StandardResponse> accessDenied = checkAdminAccess(role);
+//        if (accessDenied != null) return accessDenied;
+//
+//        try {
+//            InventoryReleaseResponseDTO responseDTO = inventoryService.releaseStock(requestDTO);
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .body(new StandardResponse(HttpStatus.CREATED.value(), "Inventory released successfully", responseDTO));
+//        } catch (IllegalArgumentException ex) {
+//            return ResponseEntity.badRequest()
+//                    .body(new StandardResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new StandardResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null));
+//        }
+//    }
 
     @GetMapping(path = "/get-all-products-quantity", params = {"page", "size"})
     public ResponseEntity<StandardResponse> getAllInventory(

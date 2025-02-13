@@ -22,4 +22,36 @@ public class InventoryStockHold {
     @ManyToOne
     @JoinColumn(name = "inventory_id", referencedColumnName = "inventory_id",nullable = false)
     private Inventory inventory;
+
+    public Long getInventoryStockHoldId() {
+        return inventoryStockHoldId;
+    }
+
+    public void setInventoryStockHoldId(Long inventoryStockHoldId) {
+        this.inventoryStockHoldId = inventoryStockHoldId;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public Integer getQuantityHold() {
+        return quantityHold;
+    }
+
+    public void setQuantityHold(Integer quantityHold) {
+        this.quantityHold = quantityHold;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
 }
