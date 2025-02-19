@@ -14,6 +14,7 @@ public class InventoryAvailabilityRequestDTO {
     @Min(value = 1, message = "Requested quantity must be at least 1")
     private Integer requestedQuantity;
 
+
     public Long getOrderId() {
         return orderId;
     }

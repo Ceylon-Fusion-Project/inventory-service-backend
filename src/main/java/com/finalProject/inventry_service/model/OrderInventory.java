@@ -19,6 +19,9 @@ public class OrderInventory {
     private Long productId;
     @Column(name = "order_quantity", nullable = false)
     private Integer OrderQuentity;
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;
+
 
     public Long getOrderInventoryId() {
         return orderInventoryId;

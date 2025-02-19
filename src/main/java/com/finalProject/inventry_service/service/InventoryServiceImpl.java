@@ -1,10 +1,12 @@
 package com.finalProject.inventry_service.service;
 
 import com.finalProject.inventry_service.dto.*;
-import com.finalProject.inventry_service.enums.OrderStatus;
 import com.finalProject.inventry_service.model.Inventory;
 import com.finalProject.inventry_service.model.InventoryStockHold;
+import com.finalProject.inventry_service.model.OrderInventory;
 import com.finalProject.inventry_service.repo.InventoryRepository;
+import com.finalProject.inventry_service.repo.InventoryStockHoldRepository;
+import com.finalProject.inventry_service.repo.OrderInventoryRepository;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +22,14 @@ public class InventoryServiceImpl implements InventoryService {
     @Autowired
     private InventoryRepository inventoryRepository;
 
-//    @Autowired
-//    private ReleaseInventoryRepository releaseInventoryRepository;
+    @Autowired
+    private InventoryStockHoldRepository inventoryStockHoldRepository;
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private OrderInventoryRepository orderInventoryRepository;
 
     @Override
     @Transactional
@@ -58,47 +63,6 @@ public class InventoryServiceImpl implements InventoryService {
         return modelMapper.map(inventory, InventoryResponseDTO.class);
     }
 
-//    @Transactional
-//    @Override
-//    public InventoryReleaseResponseDTO releaseStock(InventoryReleaseRequestDTO requestDTO) {
-//        if (requestDTO.getOrderStatus() != OrderStatus.CONFIRMED) {
-//            throw new IllegalStateException("Order status is not confirmed, cannot release stock.");
-//        }
-//
-//        // Fetch inventory based on product ID
-//        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
-//
-//        if (inventory == null) {
-//            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
-//        }
-//
-//        // Ensure enough stock is available
-//        if (inventory.getQuantityInStock() < requestDTO.getOrderItemQuantity()) {
-//            throw new IllegalStateException("Insufficient stock for product ID: " + requestDTO.getProductId());
-//        }
-//
-//        // Reduce stock from inventory
-//        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestDTO.getOrderItemQuantity());
-//        inventoryRepository.save(inventory);
-//
-//        // Create and save ReleaseInventory record
-//        ReleaseInventory releaseInventory = new ReleaseInventory();
-//        releaseInventory.setProductId(requestDTO.getProductId());
-//        releaseInventory.setQuantityReleased(requestDTO.getOrderItemQuantity());
-//        releaseInventory.setInventory(inventory);
-//
-//        releaseInventory = releaseInventoryRepository.save(releaseInventory);
-//
-//        // Explicit ModelMapper mapping to avoid ambiguity
-//        InventoryReleaseResponseDTO responseDTO = new InventoryReleaseResponseDTO();
-//        responseDTO.setInventoryReleaseId(releaseInventory.getInventoryReleaseId());
-//        responseDTO.setProductId(releaseInventory.getProductId());
-//        responseDTO.setQuantityReleased(releaseInventory.getQuantityReleased());
-//        responseDTO.setInventoryId(releaseInventory.getInventory().getInventoryId()); // Explicit mapping
-//
-//        return responseDTO;
-//    }
-
 
     @Override
     @Transactional
@@ -112,34 +76,135 @@ public class InventoryServiceImpl implements InventoryService {
                 .map(inventory -> modelMapper.map(inventory, InventoryResponseDTO.class))
                 .toList();
     }
+
     @Override
     @Transactional
-    public InventoryAvailabilityResponseDTO checkInventoryAvailability(InventoryAvailabilityRequestDTO requestDTO) {
-        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
+    public InventoryAvailabilityResponseDTO checkAvailability(InventoryAvailabilityRequestDTO requestDTO) {
+        Long productId = requestDTO.getProductId();
+        Integer requestedQuantity = requestDTO.getRequestedQuantity();
+        Long orderId = requestDTO.getOrderId(); // Order ID added to track the request
 
+        // Find the inventory for the product
+        Inventory inventory = inventoryRepository.findByProductId(productId);
+        InventoryAvailabilityResponseDTO response = new InventoryAvailabilityResponseDTO();
+
+        // If inventory is not found
         if (inventory == null) {
-            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
+            response.setMessage("Inventory not found for product ID: " + productId);
+            return response;
         }
-        Boolean isAvailable = inventory.getQuantityInStock() >= requestDTO.getRequestedQuantity();
-        String message = isAvailable ? "Product is available." : "Insufficient stock.";
-        return new InventoryAvailabilityResponseDTO(isAvailable, inventory.getQuantityInStock(), message);
+
+        // Check if there is sufficient inventory
+        if (inventory.getQuantityInStock() < requestedQuantity) {
+            response.setMessage("Insufficient stock. Available: " + inventory.getQuantityInStock() +
+                    ", Requested: " + requestedQuantity);
+            return response;
+        }
+
+        // Create a new stock hold record for this request
+        InventoryStockHold stockHold = new InventoryStockHold();
+        stockHold.setProductId(productId);
+        stockHold.setQuantityHold(requestedQuantity);
+        stockHold.setOrderId(orderId); // Set the order ID for the stock hold
+        stockHold.setInventory(inventory);
+
+        // Reduce available quantity in inventory
+        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestedQuantity);
+
+        // Save new stock hold record and update inventory
+        inventoryStockHoldRepository.save(stockHold);
+        inventoryRepository.save(inventory);
+
+        // Prepare success response
+        response.setMessage("Stock hold created successfully. Inventory updated.");
+        return response;
     }
 
     @Override
-    public InventoryStockHoldResponseDTO holdStock(InventoryStockHoldRequestDTO requestDTO) {
-        Inventory inventory = inventoryRepository.findByProductId(requestDTO.getProductId());
+    @Transactional
+    public ConfirmOrderResponseDTO confirmOrder(ConfirmOrderRequestDTO requestDTO) {
+        Long orderId = requestDTO.getOrderId();
+        Long productId = requestDTO.getProductId();
+        Integer orderQuantity = requestDTO.getOrderQuantity();
 
-        if (inventory == null) {
-            throw new IllegalArgumentException("Inventory not found for product ID: " + requestDTO.getProductId());
+        // Fetch the stock hold related to the order and product
+        InventoryStockHold stockHold = inventoryStockHoldRepository.findByOrderIdAndProductId(orderId, productId);
+
+        // Create the response DTO
+        ConfirmOrderResponseDTO response = new ConfirmOrderResponseDTO();
+
+        // If no stock hold found, return message indicating the stock hold is not present
+        if (stockHold == null) {
+            response.setMessage("No inventory hold found for order ID: " + orderId + " and product ID: " + productId);
+            return response;
         }
-        inventory.setQuantityInStock(inventory.getQuantityInStock() - requestDTO.getOrderItemQuantity());
-        inventoryRepository.save(inventory);
 
-        // Create and save StockHold record
-        InventoryStockHold inventoryStockHold = new InventoryStockHold();
-        inventoryStockHold.setProductId(requestDTO.getProductId());
+        // Check if the order quantity matches the stock hold quantity
+        if (stockHold.getQuantityHold() != orderQuantity) {
+            response.setMessage("Mismatch in order quantity. Stock hold quantity: " + stockHold.getQuantityHold() +
+                    ", Order quantity: " + orderQuantity);
+            return response;
+        }
 
-        return modelMapper.map(inventoryStockHold, InventoryStockHoldResponseDTO.class);
+        // Save the stock hold details to the OrderInventory table
+        OrderInventory orderInventory = new OrderInventory();
+        orderInventory.setProductId(productId);
+        orderInventory.setOrderQuentity(orderQuantity); // Set order quantity
+        orderInventory.setOrderId(orderId);
+        orderInventory = orderInventoryRepository.save(orderInventory); // Save to DB
+
+        // Update the inventory quantity: reduce by the order quantity
+        Inventory inventory = stockHold.getInventory();
+        inventory.setQuantityInStock(inventory.getQuantityInStock() - orderQuantity);
+        inventoryRepository.save(inventory); // Save updated inventory
+
+        // Clear the stock hold after confirming the order
+        inventoryStockHoldRepository.delete(stockHold);
+
+        // Set the response message and orderInventoryId
+        response.setMessage("Order confirmed and inventory updated successfully.");
+        response.setOrderInventoryId(orderInventory.getOrderInventoryId());
+
+        return response;
     }
 
+    @Override
+    @Transactional
+    public CancelOrderResponseDTO cancelOrder(CancelOrderRequestDTO requestDTO) {
+        Long orderId = requestDTO.getOrderId();
+        Long productId = requestDTO.getProductId();
+        Integer orderQuantity = requestDTO.getOrderQuantity();
+
+        // Fetch the stock hold related to the order and product
+        InventoryStockHold stockHold = inventoryStockHoldRepository.findByOrderIdAndProductId(orderId, productId);
+
+        // Create the response DTO
+        CancelOrderResponseDTO response = new CancelOrderResponseDTO();
+
+        // If no stock hold found, return message indicating the stock hold is not present
+        if (stockHold == null) {
+            response.setMessage("No inventory hold found for order ID: " + orderId + " and product ID: " + productId);
+            return response;
+        }
+
+        // Check if the order quantity matches the stock hold quantity
+        if (stockHold.getQuantityHold() != orderQuantity) {
+            response.setMessage("Mismatch in order quantity. Stock hold quantity: " + stockHold.getQuantityHold() +
+                    ", Order quantity: " + orderQuantity);
+            return response;
+        }
+
+        // Add the held quantity back to the inventory
+        Inventory inventory = stockHold.getInventory();
+        inventory.setQuantityInStock(inventory.getQuantityInStock() + orderQuantity);
+        inventoryRepository.save(inventory); // Save updated inventory
+
+        // Clear the stock hold after cancelling the order
+        inventoryStockHoldRepository.delete(stockHold);
+
+        // Set the response message
+        response.setMessage("Order cancelled and inventory restocked successfully.");
+
+        return response;
+    }
 }

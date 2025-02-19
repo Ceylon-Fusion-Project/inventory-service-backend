@@ -15,6 +15,8 @@ public class InventoryStockHold {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "inventory_stock_hold_id",nullable = false)
     private Long inventoryStockHoldId;
+    @Column(name = "order_id",nullable = false)
+    private Long orderId;
     @Column(name = "product_id",nullable = false)
     private Long productId;
     @Column(name = "quantity_hold",nullable = false)
@@ -22,6 +24,7 @@ public class InventoryStockHold {
     @ManyToOne
     @JoinColumn(name = "inventory_id", referencedColumnName = "inventory_id",nullable = false)
     private Inventory inventory;
+
 
     public Long getInventoryStockHoldId() {
         return inventoryStockHoldId;
